@@ -84,3 +84,17 @@ Default path is the configured raw data folder. Use `--help` for options.
 - **annual_csv_merger** – Header alignment and canonical column checks for annual merge flows (used by app when merging multiple files).
 - **quarterly_csv_merger** – **ingest** (load + country), **cleaning** (blank URL), **tagging** (market, media, brand), **transforms** (dates, engagement), **columns** (discovery + output), **pipeline** (orchestration).
 - **app** – Streamlit: drag-and-drop upload, merge, preview, download CSV; Brand JSON Manager.
+
+**Can you update the JSON file when deployed?**  
+Yes and no:
+
+- **During a session**: The Brand JSON Manager can read and write `data/brand.json` as usual. Edits are saved to the app’s filesystem and stay in effect until the app restarts or goes to sleep.
+- **After restart / redeploy**: On Streamlit Community Cloud (and similar hosts), the filesystem is **ephemeral**. The container is recreated from your repo, so any changes to `data/brand.json` are **lost**. Only the version in your Git repo is kept.
+
+So **updates are possible during a run, but they do not persist** across restarts unless you add persistent storage.
+
+**If you need persistent brand data when deployed:**
+
+1. **Keep using the file locally** – Deploy with the `data/brand.json` you want as the default. Users can still edit during a session; just know changes won’t survive restarts.
+2. **Use external storage** – Store brand config in a database (e.g. SQLite in a persistent volume, Supabase, etc.) or object storage (e.g. S3, GCS). Then change `brand_editor/editor.py` to read/write from that store when running in the cloud (e.g. via an env var or Streamlit secrets).
+3. **Manage brand.json in Git** – Treat `data/brand.json` as the source of truth: edit it in the repo and redeploy when you want to update brands. The in-app Brand JSON Manager then only affects the current session.
